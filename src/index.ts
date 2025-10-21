@@ -100,8 +100,8 @@ export = {
 			 */
 			checkFileSize(file: File) {
 				const maxUploadSizeInMB = 500,
-					kBytesToBytes = (kBytes: number) => kBytes * 1000;
-				if (kBytesToBytes(file.size) > maxUploadSizeInMB) {
+					kBytesToMBytes = (kBytes: number) => kBytes / 1000;
+				if (kBytesToMBytes(file.size) > maxUploadSizeInMB) {
 					throw new Error(`${file.name} exceeds size limit of ${maxUploadSizeInMB}'}.`);
 				}
 			},

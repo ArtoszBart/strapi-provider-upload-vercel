@@ -1,5 +1,6 @@
 "use strict";
 var blob_1 = require("@vercel/blob");
+var stream_1 = require("stream");
 module.exports = {
     init: function (options) {
         return {
@@ -12,7 +13,19 @@ module.exports = {
             uploadVercelBlob: function (file) {
                 return new Promise(function (resolve, reject) {
                     var _a;
-                    (0, blob_1.put)("".concat(file.hash).concat(file.ext), file.buffer || file.stream, {
+                    var body;
+                    if (file.buffer) {
+                        var arrayBuffer = file.buffer.buffer.slice(file.buffer.byteOffset, file.buffer.byteOffset + file.buffer.byteLength);
+                        body = arrayBuffer;
+                    }
+                    else if (file.stream) {
+                        body = stream_1.Readable.toWeb(file.stream);
+                    }
+                    else {
+                        reject(new Error('No buffer or stream found in file.'));
+                        return;
+                    }
+                    (0, blob_1.put)("".concat(file.hash).concat(file.ext), body, {
                         access: 'public',
                         contentType: file.mime,
                         token: options.token,
@@ -67,8 +80,8 @@ module.exports = {
              * @remarks This requires a bit more work to implement, but it allows you to upload files up to 500 MB.
              */
             checkFileSize: function (file) {
-                var maxUploadSizeInMB = 500, kBytesToBytes = function (kBytes) { return kBytes * 1000; };
-                if (kBytesToBytes(file.size) > maxUploadSizeInMB) {
+                var maxUploadSizeInMB = 500, kBytesToMBytes = function (kBytes) { return kBytes / 1000; };
+                if (kBytesToMBytes(file.size) > maxUploadSizeInMB) {
                     throw new Error("".concat(file.name, " exceeds size limit of ").concat(maxUploadSizeInMB, "'}."));
                 }
             },

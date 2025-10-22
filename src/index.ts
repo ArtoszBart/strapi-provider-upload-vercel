@@ -1,5 +1,6 @@
 import { put, del } from '@vercel/blob';
 import { ReadStream } from 'fs';
+import { Readable } from 'stream';
 
 /**
  * Plugin options.
@@ -33,6 +34,8 @@ interface File {
 	buffer?: Buffer;
 }
 
+type VercelPayload = string | ArrayBuffer | Readable | Blob | FormData | ReadableStream<unknown>;
+
 export = {
 	init(options: Options) {
 		return {
@@ -44,7 +47,23 @@ export = {
 			 */
 			uploadVercelBlob(file: File): Promise<void> {
 				return new Promise((resolve, reject) => {
-					put(`${file.hash}${file.ext}`, file.buffer || file.stream, {
+					let body: VercelPayload;
+
+					if (file.buffer) {
+						const arrayBuffer = file.buffer.buffer.slice(
+							file.buffer.byteOffset,
+							file.buffer.byteOffset + file.buffer.byteLength,
+						);
+
+						body = arrayBuffer as ArrayBuffer;
+					} else if (file.stream) {
+						body = Readable.toWeb(file.stream) as ReadableStream<unknown>;
+					} else {
+						reject(new Error('No buffer or stream found in file.'));
+						return;
+					}
+
+					put(`${file.hash}${file.ext}`, body, {
 						access: 'public',
 						contentType: file.mime,
 						token: options.token,

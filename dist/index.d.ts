@@ -1,5 +1,3 @@
-/// <reference types="node" />
-/// <reference types="node" />
 import { ReadStream } from 'fs';
 /**
  * Plugin options.
